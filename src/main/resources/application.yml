@@ -3,10 +3,11 @@ spring:
     url: ${PG_URL}
     username: ${PG_USER}
     password: ${PG_PASS}
-sql:
+  sql:
     init:
       mode: always
-jpa:
+      separator: "@@"
+  jpa:
     hibernate:
       ddl-auto: none
 
