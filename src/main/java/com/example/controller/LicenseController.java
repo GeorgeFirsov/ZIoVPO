@@ -8,9 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@RequestMapping("/api/admin/licenses")
 public class LicenseController {
 
     private final LicenseService licenseService;
@@ -21,7 +21,7 @@ public class LicenseController {
         this.applicationUserService = applicationUserService;
     }
 
-    @PostMapping
+    @PostMapping("/api/admin/licenses")
     public ResponseEntity<License> createLicense(@RequestBody LicenseService.CreateLicenseRequest request,
                                                  Authentication auth) {
         String username = auth.getName();
@@ -29,5 +29,19 @@ public class LicenseController {
 
         License created = licenseService.createLicense(request, admin.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @PostMapping("/api/licenses/activate")
+    public ResponseEntity<LicenseService.Ticket> activateLicense(@RequestBody LicenseService.ActivateLicenseRequest request,
+                                                                 Authentication auth) {
+        if (auth == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        }
+
+        String username = auth.getName();
+        User user = applicationUserService.getUserByUsernameOrFail(username);
+
+        LicenseService.Ticket ticket = licenseService.activateLicense(request, user.getId());
+        return ResponseEntity.ok(ticket);
     }
 }

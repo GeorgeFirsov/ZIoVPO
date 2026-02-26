@@ -7,4 +7,5 @@ import java.util.UUID;
 
 public interface LicenseRepository extends JpaRepository<License, UUID> {
     boolean existsByCode(String code);
+    License findByCode(String code);
 }
