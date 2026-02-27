@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -101,6 +102,43 @@ public class LicenseService {
         return buildTicket(license);
     }
 
+    @Transactional
+    public Ticket renewLicense(RenewLicenseRequest request, UUID userId) {
+        License license = findByCodeOrFail(request.getActivationKey());
+
+        if (!isRenewAllowed(license)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "renewal not allowed");
+        }
+
+        LicenseType type = licenseTypeService.getTypeOrFail(license.getTypeId());
+        int days = type.getDefaultDurationInDays();
+
+        license.setEndingDate(license.getEndingDate().plusDays(days));
+
+        License saved = licenseRepository.save(license);
+
+        LicenseHistory history = new LicenseHistory();
+        history.setLicenseId(saved.getId());
+        history.setUserId(userId);
+        history.setStatus("RENEWED");
+        history.setChangeDate(LocalDateTime.now());
+        history.setDescription(null);
+        licenseHistoryRepository.save(history);
+
+        return buildTicket(saved);
+    }
+
+    private boolean isRenewAllowed(License license) {
+        if (license.getEndingDate() == null) {
+            return false;
+        }
+
+        LocalDate today = LocalDate.now();
+        LocalDate limit = today.plusDays(7);
+
+        return !license.getEndingDate().isAfter(limit);
+    }
+
     private License findByCodeOrFail(String activationKey) {
         License license = licenseRepository.findByCode(activationKey);
         if (license == null) {
@@ -181,6 +219,13 @@ public class LicenseService {
 
         public String getDeviceName() { return deviceName; }
         public void setDeviceName(String deviceName) { this.deviceName = deviceName; }
+    }
+
+    public static class RenewLicenseRequest {
+        private String activationKey;
+
+        public String getActivationKey() { return activationKey; }
+        public void setActivationKey(String activationKey) { this.activationKey = activationKey; }
     }
 
     public static class Ticket {

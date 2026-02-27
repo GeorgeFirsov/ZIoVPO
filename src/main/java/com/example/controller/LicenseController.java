@@ -44,4 +44,18 @@ public class LicenseController {
         LicenseService.Ticket ticket = licenseService.activateLicense(request, user.getId());
         return ResponseEntity.ok(ticket);
     }
+
+    @PostMapping("/api/licenses/renew")
+    public ResponseEntity<LicenseService.Ticket> renewLicense(@RequestBody LicenseService.RenewLicenseRequest request,
+                                                              Authentication auth) {
+        if (auth == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        }
+
+        String username = auth.getName();
+        User user = applicationUserService.getUserByUsernameOrFail(username);
+
+        LicenseService.Ticket ticket = licenseService.renewLicense(request, user.getId());
+        return ResponseEntity.ok(ticket);
+    }
 }
