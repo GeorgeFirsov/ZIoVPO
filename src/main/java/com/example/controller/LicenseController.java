@@ -32,8 +32,8 @@ public class LicenseController {
     }
 
     @PostMapping("/api/licenses/activate")
-    public ResponseEntity<LicenseService.Ticket> activateLicense(@RequestBody LicenseService.ActivateLicenseRequest request,
-                                                                 Authentication auth) {
+    public ResponseEntity<LicenseService.RenewTicket> activateLicense(@RequestBody LicenseService.ActivateLicenseRequest request,
+                                                                      Authentication auth) {
         if (auth == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         }
@@ -41,13 +41,13 @@ public class LicenseController {
         String username = auth.getName();
         User user = applicationUserService.getUserByUsernameOrFail(username);
 
-        LicenseService.Ticket ticket = licenseService.activateLicense(request, user.getId());
+        LicenseService.RenewTicket ticket = licenseService.activateLicense(request, user.getId());
         return ResponseEntity.ok(ticket);
     }
 
     @PostMapping("/api/licenses/renew")
-    public ResponseEntity<LicenseService.Ticket> renewLicense(@RequestBody LicenseService.RenewLicenseRequest request,
-                                                              Authentication auth) {
+    public ResponseEntity<LicenseService.RenewTicket> renewLicense(@RequestBody LicenseService.RenewLicenseRequest request,
+                                                                   Authentication auth) {
         if (auth == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         }
@@ -55,7 +55,21 @@ public class LicenseController {
         String username = auth.getName();
         User user = applicationUserService.getUserByUsernameOrFail(username);
 
-        LicenseService.Ticket ticket = licenseService.renewLicense(request, user.getId());
+        LicenseService.RenewTicket ticket = licenseService.renewLicense(request, user.getId());
+        return ResponseEntity.ok(ticket);
+    }
+
+    @PostMapping("/api/licenses/check")
+    public ResponseEntity<LicenseService.CheckTicket> checkLicense(@RequestBody LicenseService.CheckLicenseRequest request,
+                                                                   Authentication auth) {
+        if (auth == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        }
+
+        String username = auth.getName();
+        User user = applicationUserService.getUserByUsernameOrFail(username);
+
+        LicenseService.CheckTicket ticket = licenseService.checkLicense(request, user.getId());
         return ResponseEntity.ok(ticket);
     }
 }

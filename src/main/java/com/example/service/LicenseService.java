@@ -1,9 +1,10 @@
 package com.example.service;
 
 import com.example.model.Device;
+import com.example.model.DeviceLicense;
 import com.example.model.License;
-import com.example.model.LicenseType;
 import com.example.model.LicenseHistory;
+import com.example.model.LicenseType;
 import com.example.model.User;
 import com.example.storage.DeviceLicenseRepository;
 import com.example.storage.DeviceRepository;
@@ -20,6 +21,8 @@ import java.util.UUID;
 
 @Service
 public class LicenseService {
+
+    private static final int CHECK_TICKET_TTL_SECONDS = 300;
 
     private final ProductService productService;
     private final LicenseTypeService licenseTypeService;
@@ -64,14 +67,46 @@ public class LicenseService {
         history.setUserId(adminId);
         history.setStatus("CREATED");
         history.setChangeDate(LocalDateTime.now());
-        history.setDescription(null);
+        history.setDescription("License CREATED");
 
         licenseHistoryRepository.save(history);
 
         return saved;
     }
 
-    public Ticket activateLicense(ActivateLicenseRequest request, UUID userId) {
+    public CheckTicket checkLicense(CheckLicenseRequest request, UUID userId) {
+        Device device = deviceRepository.findByMacAddress(request.getDeviceMac());
+        if (device == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "device not found");
+        }
+
+        License license = licenseRepository.findActiveByDeviceUserAndProduct(
+                device.getId(),
+                userId,
+                request.getProductId()
+        );
+
+        if (license == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "license not found");
+        }
+
+        LocalDate activationDate = null;
+
+        if (license.getId() != null && device.getId() != null) {
+            DeviceLicense dl = deviceLicenseRepository.findByLicenseIdAndDeviceId(license.getId(), device.getId());
+            if (dl != null) {
+                activationDate = dl.getActivationDate();
+            }
+        }
+
+        if (activationDate == null) {
+            activationDate = license.getFirstActivationDate();
+        }
+
+        return buildCheckTicket(license, userId, device.getId(), activationDate);
+    }
+
+    public RenewTicket activateLicense(ActivateLicenseRequest request, UUID userId) {
         License license = findByCodeOrFail(request.getActivationKey());
 
         if (license.getUserId() != null && !license.getUserId().equals(userId)) {
@@ -90,7 +125,7 @@ public class LicenseService {
         if (license.getUserId() == null) {
             LicenseType type = licenseTypeService.getTypeOrFail(license.getTypeId());
             License saved = txService.firstActivation(license, userId, type.getDefaultDurationInDays(), device);
-            return buildTicket(saved);
+            return buildRenewTicket(saved);
         }
 
         long count = deviceLicenseRepository.countByLicenseId(license.getId());
@@ -99,11 +134,11 @@ public class LicenseService {
         }
 
         txService.repeatActivation(license, userId, device);
-        return buildTicket(license);
+        return buildRenewTicket(license);
     }
 
     @Transactional
-    public Ticket renewLicense(RenewLicenseRequest request, UUID userId) {
+    public RenewTicket renewLicense(RenewLicenseRequest request, UUID userId) {
         License license = findByCodeOrFail(request.getActivationKey());
 
         if (!isRenewAllowed(license)) {
@@ -122,10 +157,10 @@ public class LicenseService {
         history.setUserId(userId);
         history.setStatus("RENEWED");
         history.setChangeDate(LocalDateTime.now());
-        history.setDescription(null);
+        history.setDescription("License RENEWED");
         licenseHistoryRepository.save(history);
 
-        return buildTicket(saved);
+        return buildRenewTicket(saved);
     }
 
     private boolean isRenewAllowed(License license) {
@@ -147,8 +182,8 @@ public class LicenseService {
         return license;
     }
 
-    private Ticket buildTicket(License license) {
-        Ticket ticket = new Ticket();
+    private RenewTicket buildRenewTicket(License license) {
+        RenewTicket ticket = new RenewTicket();
         ticket.setLicenseId(license.getId());
         ticket.setCode(license.getCode());
         ticket.setUserId(license.getUserId());
@@ -158,6 +193,21 @@ public class LicenseService {
         ticket.setFirstActivationDate(license.getFirstActivationDate());
         ticket.setEndingDate(license.getEndingDate());
         ticket.setDeviceCount(license.getDeviceCount());
+        return ticket;
+    }
+
+    private CheckTicket buildCheckTicket(License license,
+                                         UUID userId,
+                                         UUID deviceId,
+                                         LocalDate activationDate) {
+        CheckTicket ticket = new CheckTicket();
+        ticket.setServerDate(LocalDate.now());
+        ticket.setTtlSeconds(CHECK_TICKET_TTL_SECONDS);
+        ticket.setActivationDate(activationDate);
+        ticket.setEndingDate(license.getEndingDate());
+        ticket.setUserId(userId);
+        ticket.setDeviceId(deviceId);
+        ticket.setBlocked(license.isBlocked());
         return ticket;
     }
 
@@ -172,7 +222,7 @@ public class LicenseService {
         license.setDeviceCount(1);
         license.setFirstActivationDate(null);
         license.setEndingDate(null);
-        license.setDescription(null);
+        license.setDescription("License CREATED");
         return license;
     }
 
@@ -221,6 +271,27 @@ public class LicenseService {
         public void setDeviceName(String deviceName) { this.deviceName = deviceName; }
     }
 
+    public static class CheckLicenseRequest {
+        private String deviceMac;
+        private UUID productId;
+
+        public String getDeviceMac() {
+            return deviceMac;
+        }
+
+        public void setDeviceMac(String deviceMac) {
+            this.deviceMac = deviceMac;
+        }
+
+        public UUID getProductId() {
+            return productId;
+        }
+
+        public void setProductId(UUID productId) {
+            this.productId = productId;
+        }
+    }
+
     public static class RenewLicenseRequest {
         private String activationKey;
 
@@ -228,7 +299,7 @@ public class LicenseService {
         public void setActivationKey(String activationKey) { this.activationKey = activationKey; }
     }
 
-    public static class Ticket {
+    public static class RenewTicket {
         private UUID licenseId;
         private String code;
         private UUID userId;
@@ -265,5 +336,71 @@ public class LicenseService {
 
         public int getDeviceCount() { return deviceCount; }
         public void setDeviceCount(int deviceCount) { this.deviceCount = deviceCount; }
+    }
+
+    public static class CheckTicket {
+        private LocalDate serverDate;
+        private int ttlSeconds;
+        private LocalDate activationDate;
+        private LocalDate endingDate;
+        private UUID userId;
+        private UUID deviceId;
+        private boolean blocked;
+
+        public LocalDate getServerDate() {
+            return serverDate;
+        }
+
+        public void setServerDate(LocalDate serverDate) {
+            this.serverDate = serverDate;
+        }
+
+        public int getTtlSeconds() {
+            return ttlSeconds;
+        }
+
+        public void setTtlSeconds(int ttlSeconds) {
+            this.ttlSeconds = ttlSeconds;
+        }
+
+        public LocalDate getActivationDate() {
+            return activationDate;
+        }
+
+        public void setActivationDate(LocalDate activationDate) {
+            this.activationDate = activationDate;
+        }
+
+        public LocalDate getEndingDate() {
+            return endingDate;
+        }
+
+        public void setEndingDate(LocalDate endingDate) {
+            this.endingDate = endingDate;
+        }
+
+        public UUID getUserId() {
+            return userId;
+        }
+
+        public void setUserId(UUID userId) {
+            this.userId = userId;
+        }
+
+        public UUID getDeviceId() {
+            return deviceId;
+        }
+
+        public void setDeviceId(UUID deviceId) {
+            this.deviceId = deviceId;
+        }
+
+        public boolean isBlocked() {
+            return blocked;
+        }
+
+        public void setBlocked(boolean blocked) {
+            this.blocked = blocked;
+        }
     }
 }
