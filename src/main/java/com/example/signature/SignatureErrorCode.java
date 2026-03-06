@@ -1,0 +1,12 @@
+package com.example.signature;
+
+public enum SignatureErrorCode {
+    KEY_SOURCE_UNAVAILABLE,
+    AUTH_FAILED,
+    KEY_NOT_FOUND,
+    KEY_FORMAT_INVALID,
+    INPUT_INVALID,
+    CANONICALIZATION_FAILED,
+    OUTPUT_ENCODING_FAILED,
+    SIGN_OPERATION_FAILED
+}

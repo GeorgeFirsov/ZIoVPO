@@ -19,3 +19,10 @@ server:
     key-store-type: PKCS12
     key-store-password: ${TLS_KEYSTORE_PASSWORD}
     key-alias: hotel-1bib23427
+
+signature:
+  key-store-path: classpath:signature/signing.p12
+  key-store-type: PKCS12
+  key-store-password: ${SIGNATURE_KEY_STORE_PASSWORD}
+  key-alias: ${SIGNATURE_KEY_ALIAS}
+  key-password: ${SIGNATURE_KEY_PASSWORD}

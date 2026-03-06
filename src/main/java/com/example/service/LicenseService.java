@@ -246,14 +246,29 @@ public class LicenseService {
         private UUID typeId;
         private UUID ownerId;
 
-        public UUID getProductId() { return productId; }
-        public void setProductId(UUID productId) { this.productId = productId; }
+        public UUID getProductId() {
+            return productId;
+        }
 
-        public UUID getTypeId() { return typeId; }
-        public void setTypeId(UUID typeId) { this.typeId = typeId; }
+        public void setProductId(UUID productId) {
+            this.productId = productId;
+        }
 
-        public UUID getOwnerId() { return ownerId; }
-        public void setOwnerId(UUID ownerId) { this.ownerId = ownerId; }
+        public UUID getTypeId() {
+            return typeId;
+        }
+
+        public void setTypeId(UUID typeId) {
+            this.typeId = typeId;
+        }
+
+        public UUID getOwnerId() {
+            return ownerId;
+        }
+
+        public void setOwnerId(UUID ownerId) {
+            this.ownerId = ownerId;
+        }
     }
 
     public static class ActivateLicenseRequest {
@@ -261,14 +276,29 @@ public class LicenseService {
         private String deviceMac;
         private String deviceName;
 
-        public String getActivationKey() { return activationKey; }
-        public void setActivationKey(String activationKey) { this.activationKey = activationKey; }
+        public String getActivationKey() {
+            return activationKey;
+        }
 
-        public String getDeviceMac() { return deviceMac; }
-        public void setDeviceMac(String deviceMac) { this.deviceMac = deviceMac; }
+        public void setActivationKey(String activationKey) {
+            this.activationKey = activationKey;
+        }
 
-        public String getDeviceName() { return deviceName; }
-        public void setDeviceName(String deviceName) { this.deviceName = deviceName; }
+        public String getDeviceMac() {
+            return deviceMac;
+        }
+
+        public void setDeviceMac(String deviceMac) {
+            this.deviceMac = deviceMac;
+        }
+
+        public String getDeviceName() {
+            return deviceName;
+        }
+
+        public void setDeviceName(String deviceName) {
+            this.deviceName = deviceName;
+        }
     }
 
     public static class CheckLicenseRequest {
@@ -295,8 +325,13 @@ public class LicenseService {
     public static class RenewLicenseRequest {
         private String activationKey;
 
-        public String getActivationKey() { return activationKey; }
-        public void setActivationKey(String activationKey) { this.activationKey = activationKey; }
+        public String getActivationKey() {
+            return activationKey;
+        }
+
+        public void setActivationKey(String activationKey) {
+            this.activationKey = activationKey;
+        }
     }
 
     public static class RenewTicket {
@@ -306,36 +341,90 @@ public class LicenseService {
         private UUID ownerId;
         private UUID productId;
         private UUID typeId;
-        private java.time.LocalDate firstActivationDate;
-        private java.time.LocalDate endingDate;
+        private LocalDate firstActivationDate;
+        private LocalDate endingDate;
         private int deviceCount;
+        private String signature;
 
-        public UUID getLicenseId() { return licenseId; }
-        public void setLicenseId(UUID licenseId) { this.licenseId = licenseId; }
+        public UUID getLicenseId() {
+            return licenseId;
+        }
 
-        public String getCode() { return code; }
-        public void setCode(String code) { this.code = code; }
+        public void setLicenseId(UUID licenseId) {
+            this.licenseId = licenseId;
+        }
 
-        public UUID getUserId() { return userId; }
-        public void setUserId(UUID userId) { this.userId = userId; }
+        public String getCode() {
+            return code;
+        }
 
-        public UUID getOwnerId() { return ownerId; }
-        public void setOwnerId(UUID ownerId) { this.ownerId = ownerId; }
+        public void setCode(String code) {
+            this.code = code;
+        }
 
-        public UUID getProductId() { return productId; }
-        public void setProductId(UUID productId) { this.productId = productId; }
+        public UUID getUserId() {
+            return userId;
+        }
 
-        public UUID getTypeId() { return typeId; }
-        public void setTypeId(UUID typeId) { this.typeId = typeId; }
+        public void setUserId(UUID userId) {
+            this.userId = userId;
+        }
 
-        public java.time.LocalDate getFirstActivationDate() { return firstActivationDate; }
-        public void setFirstActivationDate(java.time.LocalDate firstActivationDate) { this.firstActivationDate = firstActivationDate; }
+        public UUID getOwnerId() {
+            return ownerId;
+        }
 
-        public java.time.LocalDate getEndingDate() { return endingDate; }
-        public void setEndingDate(java.time.LocalDate endingDate) { this.endingDate = endingDate; }
+        public void setOwnerId(UUID ownerId) {
+            this.ownerId = ownerId;
+        }
 
-        public int getDeviceCount() { return deviceCount; }
-        public void setDeviceCount(int deviceCount) { this.deviceCount = deviceCount; }
+        public UUID getProductId() {
+            return productId;
+        }
+
+        public void setProductId(UUID productId) {
+            this.productId = productId;
+        }
+
+        public UUID getTypeId() {
+            return typeId;
+        }
+
+        public void setTypeId(UUID typeId) {
+            this.typeId = typeId;
+        }
+
+        public LocalDate getFirstActivationDate() {
+            return firstActivationDate;
+        }
+
+        public void setFirstActivationDate(LocalDate firstActivationDate) {
+            this.firstActivationDate = firstActivationDate;
+        }
+
+        public LocalDate getEndingDate() {
+            return endingDate;
+        }
+
+        public void setEndingDate(LocalDate endingDate) {
+            this.endingDate = endingDate;
+        }
+
+        public int getDeviceCount() {
+            return deviceCount;
+        }
+
+        public void setDeviceCount(int deviceCount) {
+            this.deviceCount = deviceCount;
+        }
+
+        public String getSignature() {
+            return signature;
+        }
+
+        public void setSignature(String signature) {
+            this.signature = signature;
+        }
     }
 
     public static class CheckTicket {
@@ -346,6 +435,7 @@ public class LicenseService {
         private UUID userId;
         private UUID deviceId;
         private boolean blocked;
+        private String signature;
 
         public LocalDate getServerDate() {
             return serverDate;
@@ -401,6 +491,14 @@ public class LicenseService {
 
         public void setBlocked(boolean blocked) {
             this.blocked = blocked;
+        }
+
+        public String getSignature() {
+            return signature;
+        }
+
+        public void setSignature(String signature) {
+            this.signature = signature;
         }
     }
 }

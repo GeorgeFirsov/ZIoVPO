@@ -4,10 +4,13 @@ import com.example.model.License;
 import com.example.model.User;
 import com.example.service.ApplicationUserService;
 import com.example.service.LicenseService;
+import com.example.signature.TicketSigningService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
@@ -15,10 +18,14 @@ public class LicenseController {
 
     private final LicenseService licenseService;
     private final ApplicationUserService applicationUserService;
+    private final TicketSigningService ticketSigningService;
 
-    public LicenseController(LicenseService licenseService, ApplicationUserService applicationUserService) {
+    public LicenseController(LicenseService licenseService,
+                             ApplicationUserService applicationUserService,
+                             TicketSigningService ticketSigningService) {
         this.licenseService = licenseService;
         this.applicationUserService = applicationUserService;
+        this.ticketSigningService = ticketSigningService;
     }
 
     @PostMapping("/api/admin/licenses")
@@ -42,6 +49,7 @@ public class LicenseController {
         User user = applicationUserService.getUserByUsernameOrFail(username);
 
         LicenseService.RenewTicket ticket = licenseService.activateLicense(request, user.getId());
+        ticketSigningService.signRenewTicket(ticket);
         return ResponseEntity.ok(ticket);
     }
 
@@ -56,6 +64,7 @@ public class LicenseController {
         User user = applicationUserService.getUserByUsernameOrFail(username);
 
         LicenseService.RenewTicket ticket = licenseService.renewLicense(request, user.getId());
+        ticketSigningService.signRenewTicket(ticket);
         return ResponseEntity.ok(ticket);
     }
 
@@ -70,6 +79,7 @@ public class LicenseController {
         User user = applicationUserService.getUserByUsernameOrFail(username);
 
         LicenseService.CheckTicket ticket = licenseService.checkLicense(request, user.getId());
+        ticketSigningService.signCheckTicket(ticket);
         return ResponseEntity.ok(ticket);
     }
 }
