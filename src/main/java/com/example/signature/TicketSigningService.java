@@ -20,16 +20,7 @@ public class TicketSigningService {
         this.objectMapper = objectMapper;
     }
 
-    public void signRenewTicket(LicenseService.RenewTicket ticket) {
-        try {
-            String sig = signWithoutSignatureField(ticket);
-            ticket.setSignature(sig);
-        } catch (SignatureModuleException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "signature error: " + e.getCode());
-        }
-    }
-
-    public void signCheckTicket(LicenseService.CheckTicket ticket) {
+    public void signTicket(LicenseService.Ticket ticket) {
         try {
             String sig = signWithoutSignatureField(ticket);
             ticket.setSignature(sig);

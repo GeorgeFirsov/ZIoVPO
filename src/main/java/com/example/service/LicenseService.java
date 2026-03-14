@@ -74,7 +74,7 @@ public class LicenseService {
         return saved;
     }
 
-    public CheckTicket checkLicense(CheckLicenseRequest request, UUID userId) {
+    public Ticket checkLicense(CheckLicenseRequest request, UUID userId) {
         Device device = deviceRepository.findByMacAddress(request.getDeviceMac());
         if (device == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "device not found");
@@ -103,10 +103,10 @@ public class LicenseService {
             activationDate = license.getFirstActivationDate();
         }
 
-        return buildCheckTicket(license, userId, device.getId(), activationDate);
+        return buildTicket(license, userId, device.getId(), activationDate);
     }
 
-    public RenewTicket activateLicense(ActivateLicenseRequest request, UUID userId) {
+    public Ticket activateLicense(ActivateLicenseRequest request, UUID userId) {
         License license = findByCodeOrFail(request.getActivationKey());
 
         if (license.getUserId() != null && !license.getUserId().equals(userId)) {
@@ -125,7 +125,7 @@ public class LicenseService {
         if (license.getUserId() == null) {
             LicenseType type = licenseTypeService.getTypeOrFail(license.getTypeId());
             License saved = txService.firstActivation(license, userId, type.getDefaultDurationInDays(), device);
-            return buildRenewTicket(saved);
+            return buildTicket(saved, userId, device.getId(), saved.getFirstActivationDate());
         }
 
         long count = deviceLicenseRepository.countByLicenseId(license.getId());
@@ -134,11 +134,11 @@ public class LicenseService {
         }
 
         txService.repeatActivation(license, userId, device);
-        return buildRenewTicket(license);
+        return buildTicket(license, userId, device.getId(), LocalDate.now());
     }
 
     @Transactional
-    public RenewTicket renewLicense(RenewLicenseRequest request, UUID userId) {
+    public Ticket renewLicense(RenewLicenseRequest request, UUID userId) {
         License license = findByCodeOrFail(request.getActivationKey());
 
         if (!isRenewAllowed(license)) {
@@ -160,7 +160,7 @@ public class LicenseService {
         history.setDescription("License RENEWED");
         licenseHistoryRepository.save(history);
 
-        return buildRenewTicket(saved);
+        return buildTicket(saved, userId, null, saved.getFirstActivationDate());
     }
 
     private boolean isRenewAllowed(License license) {
@@ -182,25 +182,11 @@ public class LicenseService {
         return license;
     }
 
-    private RenewTicket buildRenewTicket(License license) {
-        RenewTicket ticket = new RenewTicket();
-        ticket.setLicenseId(license.getId());
-        ticket.setCode(license.getCode());
-        ticket.setUserId(license.getUserId());
-        ticket.setOwnerId(license.getOwnerId());
-        ticket.setProductId(license.getProductId());
-        ticket.setTypeId(license.getTypeId());
-        ticket.setFirstActivationDate(license.getFirstActivationDate());
-        ticket.setEndingDate(license.getEndingDate());
-        ticket.setDeviceCount(license.getDeviceCount());
-        return ticket;
-    }
-
-    private CheckTicket buildCheckTicket(License license,
-                                         UUID userId,
-                                         UUID deviceId,
-                                         LocalDate activationDate) {
-        CheckTicket ticket = new CheckTicket();
+    private Ticket buildTicket(License license,
+                               UUID userId,
+                               UUID deviceId,
+                               LocalDate activationDate) {
+        Ticket ticket = new Ticket();
         ticket.setServerDate(LocalDate.now());
         ticket.setTtlSeconds(CHECK_TICKET_TTL_SECONDS);
         ticket.setActivationDate(activationDate);
@@ -334,100 +320,7 @@ public class LicenseService {
         }
     }
 
-    public static class RenewTicket {
-        private UUID licenseId;
-        private String code;
-        private UUID userId;
-        private UUID ownerId;
-        private UUID productId;
-        private UUID typeId;
-        private LocalDate firstActivationDate;
-        private LocalDate endingDate;
-        private int deviceCount;
-        private String signature;
-
-        public UUID getLicenseId() {
-            return licenseId;
-        }
-
-        public void setLicenseId(UUID licenseId) {
-            this.licenseId = licenseId;
-        }
-
-        public String getCode() {
-            return code;
-        }
-
-        public void setCode(String code) {
-            this.code = code;
-        }
-
-        public UUID getUserId() {
-            return userId;
-        }
-
-        public void setUserId(UUID userId) {
-            this.userId = userId;
-        }
-
-        public UUID getOwnerId() {
-            return ownerId;
-        }
-
-        public void setOwnerId(UUID ownerId) {
-            this.ownerId = ownerId;
-        }
-
-        public UUID getProductId() {
-            return productId;
-        }
-
-        public void setProductId(UUID productId) {
-            this.productId = productId;
-        }
-
-        public UUID getTypeId() {
-            return typeId;
-        }
-
-        public void setTypeId(UUID typeId) {
-            this.typeId = typeId;
-        }
-
-        public LocalDate getFirstActivationDate() {
-            return firstActivationDate;
-        }
-
-        public void setFirstActivationDate(LocalDate firstActivationDate) {
-            this.firstActivationDate = firstActivationDate;
-        }
-
-        public LocalDate getEndingDate() {
-            return endingDate;
-        }
-
-        public void setEndingDate(LocalDate endingDate) {
-            this.endingDate = endingDate;
-        }
-
-        public int getDeviceCount() {
-            return deviceCount;
-        }
-
-        public void setDeviceCount(int deviceCount) {
-            this.deviceCount = deviceCount;
-        }
-
-        public String getSignature() {
-            return signature;
-        }
-
-        public void setSignature(String signature) {
-            this.signature = signature;
-        }
-    }
-
-    public static class CheckTicket {
+    public static class Ticket {
         private LocalDate serverDate;
         private int ttlSeconds;
         private LocalDate activationDate;
