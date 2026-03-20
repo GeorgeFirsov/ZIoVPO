@@ -126,3 +126,49 @@ create index if not exists idx_device_license_device_id on device_license(device
 
 create index if not exists idx_license_history_license_id on license_history(license_id)@@
 create index if not exists idx_license_history_user_id on license_history(user_id)@@
+
+create table if not exists signatures (
+    id uuid primary key default gen_random_uuid(),
+    threat_name varchar(255) not null,
+    first_bytes_hex varchar(512) not null,
+    remainder_hash_hex varchar(512) not null,
+    remainder_length bigint not null,
+    file_type varchar(100) not null,
+    offset_start bigint not null,
+    offset_end bigint not null,
+    updated_at timestamp with time zone not null,
+    status varchar(20) not null,
+    digital_signature_base64 varchar(2000) not null
+)@@
+
+create table if not exists signatures_history (
+    history_id bigserial primary key,
+    signature_id uuid not null references signatures(id),
+    version_created_at timestamp with time zone not null,
+    threat_name varchar(255) not null,
+    first_bytes_hex varchar(512) not null,
+    remainder_hash_hex varchar(512) not null,
+    remainder_length bigint not null,
+    file_type varchar(100) not null,
+    offset_start bigint not null,
+    offset_end bigint not null,
+    status varchar(20) not null,
+    updated_at timestamp with time zone not null,
+    digital_signature_base64 varchar(2000) not null
+)@@
+
+create table if not exists signatures_audit (
+    audit_id bigserial primary key,
+    signature_id uuid not null references signatures(id),
+    changed_by varchar(100) not null,
+    changed_at timestamp with time zone not null,
+    fields_changed varchar(2000) not null,
+    description varchar(1000) not null
+)@@
+
+create index if not exists idx_signatures_status on signatures(status)@@
+create index if not exists idx_signatures_updated_at on signatures(updated_at)@@
+create index if not exists idx_signatures_history_signature_id on signatures_history(signature_id)@@
+create index if not exists idx_signatures_history_version_created_at on signatures_history(version_created_at)@@
+create index if not exists idx_signatures_audit_signature_id on signatures_audit(signature_id)@@
+create index if not exists idx_signatures_audit_changed_at on signatures_audit(changed_at)@@
