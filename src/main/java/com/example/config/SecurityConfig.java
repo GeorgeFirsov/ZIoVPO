@@ -36,6 +36,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/admin/signatures/**").hasRole("ADMIN")
+                .requestMatchers("/api/binary/signatures/**").hasAnyRole("USER", "ADMIN")
                 .requestMatchers("/api/signatures/**").hasAnyRole("USER", "ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/whoami").authenticated()
