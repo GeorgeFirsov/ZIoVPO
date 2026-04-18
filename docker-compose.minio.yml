@@ -1,0 +1,32 @@
+services:
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    container_name: minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio-root}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio-root-password}
+    volumes:
+      - minio_data:/data
+
+  minio-init:
+    image: minio/mc
+    container_name: minio-init
+    depends_on:
+      - minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio-root}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio-root-password}
+      MINIO_BUCKET: ${MINIO_BUCKET:-signature-files}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-signature-app}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-signature-app-secret}
+    volumes:
+      - ./docker/minio/init-minio.sh:/scripts/init-minio.sh:ro
+    entrypoint: ["/bin/sh", "/scripts/init-minio.sh"]
+    restart: "no"
+
+volumes:
+  minio_data:

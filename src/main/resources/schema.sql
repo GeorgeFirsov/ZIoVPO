@@ -172,3 +172,16 @@ create index if not exists idx_signatures_history_signature_id on signatures_his
 create index if not exists idx_signatures_history_version_created_at on signatures_history(version_created_at)@@
 create index if not exists idx_signatures_audit_signature_id on signatures_audit(signature_id)@@
 create index if not exists idx_signatures_audit_changed_at on signatures_audit(changed_at)@@
+
+create table if not exists signature_files (
+    id uuid primary key default gen_random_uuid(),
+    signature_id uuid not null unique references signatures(id),
+    bucket_name varchar(100) not null,
+    object_key varchar(500) not null,
+    original_file_name varchar(255) not null,
+    content_type varchar(255) not null,
+    file_size bigint not null,
+    created_at timestamp with time zone not null
+)@@
+
+create index if not exists idx_signature_files_signature_id on signature_files(signature_id)@@

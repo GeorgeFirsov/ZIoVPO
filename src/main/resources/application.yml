@@ -26,3 +26,10 @@ signature:
   key-store-password: ${SIGNATURE_KEY_STORE_PASSWORD}
   key-alias: ${SIGNATURE_KEY_ALIAS}
   key-password: ${SIGNATURE_KEY_PASSWORD}
+
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY}
+  secret-key: ${MINIO_SECRET_KEY}
+  bucket: ${MINIO_BUCKET:signature-files}
+  url-expiry-minutes: ${MINIO_URL_EXPIRY_MINUTES:15}
